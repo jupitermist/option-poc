@@ -8,10 +8,10 @@ def black_scholes_call(S, K, r, T, sigma):
     
     C = S * norm.cdf(d1) - K * np.exp(-r*T) * norm.cdf(d2)
     delta = norm.cdf(d1)
-    return C, delta
+    theta = -(S * norm.pdf(d1) * sigma) / (2 * np.sqrt(T)) - r * K * np.exp(-r*T) * norm.cdf(d2)
+    theta = theta / 250
+    return C, delta, theta
 
 if __name__ == "__main__":
-    price, delta = black_scholes_call(S=600, K=620, r=0.05, T=0.25, sigma=0.2)    
-    print(f"price={price}, delta={delta}")
-
- 
+    price, delta, theta = black_scholes_call(S=600, K=620, r=0.05, T=0.25, sigma=0.2)
+    print(f"price={price}, delta={delta}, theta={theta}")
