@@ -13,6 +13,7 @@ client = Anthropic(api_key=api_key)
 
 prices = []
 prev_price = None
+prev_S = None
 
 S = 600
 K = 620
@@ -41,14 +42,17 @@ for days_left in range(5, 0, -1):
 
     if prev_price is not None:
         price_change = price - prev_price
+        stock_change = S - prev_S
         print(f"  price change from previous day: {round(price_change, 2)}")
+        print(f"  underlying change from previous day: {round(stock_change, 2)}")
 
     prev_price = price
+    prev_S = S
 
 print(prices)
 
 
-prompt = f"This is a call option with strike {K} and volatility {sigma}. Over 5 days, the underlying moved through {stock_prices}, the option price moved through {prices}, the computed delta was {deltas}, the computed daily theta was {thetas}, and the computed gamma was {gammas}. Analyze what drove the option's price: separate the effect of the underlying's movement from time decay and use gamma to account for how delta itself change as the underlying moved. Use the provided delta, theta, and gamma values rather than estimating them."
+prompt = f"This is a call option with strike {K} and volatility {sigma}. Over 5 days, the underlying moved through {stock_prices}, the option price moved through {prices}, the computed delta was {deltas}, the computed daily theta was {thetas}, and the computed gamma was {gammas}. Analyze what drove the option's price: separate the effect of the underlying's movement from time decay and use gamma to account for how delta itself change as the underlying moved. Use the provided delta, theta, and gamma values rather than estimating them. The theta values are already expressed per calendar day, so do not divide them by 365 again."
 response = client.messages.create(
     model="claude-haiku-4-5-20251001",
     max_tokens=400,
