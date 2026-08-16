@@ -1,10 +1,9 @@
 import os
-import random 
+import random
 
 from dotenv import load_dotenv
 from anthropic import Anthropic
 from bs import black_scholes_call
-
 
 load_dotenv()
 
@@ -20,7 +19,7 @@ K = 620
 r = 0.05
 sigma = 0.2
 
-stock_prices = [] 
+stock_prices = []
 deltas = []
 thetas = []
 gammas = []
@@ -35,15 +34,17 @@ for days_left in range(5, 0, -1):
     deltas.append(round(delta, 3))
     thetas.append(round(theta, 3))
     gammas.append(round(gamma, 5))
-    
-    print(f"Day {days_left}: underlying={round(S, 2)} option={round(float(price), 2)} delta={round(delta, 3)} theta={round(theta, 3)} gamma={round(gamma, 5)}")
+
+    print(
+        f"Day {days_left}: underlying={round(S, 2)} option={round(float(price), 2)} delta={round(delta, 3)} theta={round(theta, 3)} gamma={round(gamma, 5)}"
+    )
 
     if prev_price is not None:
         price_change = price - prev_price
-        print(f" price change from previous day: {round(price_change, 2)}")
+        print(f"  price change from previous day: {round(price_change, 2)}")
 
     prev_price = price
-        
+
 print(prices)
 
 
@@ -51,6 +52,7 @@ prompt = f"This is a call option with strike {K} and volatility {sigma}. Over 5 
 response = client.messages.create(
     model="claude-haiku-4-5-20251001",
     max_tokens=400,
-    messages=[{"role": "user", "content": prompt}])
+    messages=[{"role": "user", "content": prompt}],
+)
 
 print(response.content[0].text)
