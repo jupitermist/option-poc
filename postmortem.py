@@ -1,5 +1,6 @@
 import os
 import random
+import json
 
 from dotenv import load_dotenv
 from anthropic import Anthropic
@@ -46,13 +47,26 @@ for days_left in range(5, 0, -1):
         print(f"  price change from previous day: {round(price_change, 2)}")
         print(f"  underlying change from previous day: {round(stock_change, 2)}")
 
+        day_prompt = f"""On this day, the option price changed by {round(price_change, 2)} and the underlying changed by {round(stock_change, 2)}. The delta was {round(delta, 3)}, the daily theta was {round(theta, 3)}, and the gamma was {round(gamma, 5)}.
+Identify the single main driver of the price change.
+main_driver must be one of: "delta", "theta", "gamma".
+Respond in JSON with this exact format: {{"main_driver": "theta", "reason": "short explanation under 15 words"}}
+Output only the raw JSON. Do not wrap it in markdown code blocks or backticks."""
+        day_response = client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=100,
+            messages=[{"role": "user", "content": day_prompt}],
+        )
+        day_data = json.loads(day_response.content[0].text)
+        print(f" main driver: {day_data['main_driver']} ({day_data['reason']})")
+
     prev_price = price
     prev_S = S
 
 print(prices)
 
 
-prompt = f"This is a call option with strike {K} and volatility {sigma}. Over 5 days, the underlying moved through {stock_prices}, the option price moved through {prices}, the computed delta was {deltas}, the computed daily theta was {thetas}, and the computed gamma was {gammas}. Analyze what drove the option's price: separate the effect of the underlying's movement from time decay and use gamma to account for how delta itself change as the underlying moved. Use the provided delta, theta, and gamma values rather than estimating them. The theta values are already expressed per calendar day, so do not divide them by 365 again."
+prompt = f"This is a call option with strike {K} and volatility {sigma}. Over 5 days, the underlying moved through {stock_prices}, the option price moved through {prices}, the computed delta was {deltas}, the computed daily theta was {thetas}, and the computed gamma was {gammas}. Analyze what drove the option's price: separate the effect of the underlying's movement from time decay and use gamma to account for how delta itself change as the underlying moved. Use the provided delta, theta, and gamma values rather than estimating them. "
 response = client.messages.create(
     model="claude-haiku-4-5-20251001",
     max_tokens=400,
