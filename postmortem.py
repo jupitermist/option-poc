@@ -5,6 +5,7 @@ import json
 from dotenv import load_dotenv
 from anthropic import Anthropic
 from bs import black_scholes_call
+from collections import Counter
 
 load_dotenv()
 
@@ -25,6 +26,8 @@ stock_prices = []
 deltas = []
 thetas = []
 gammas = []
+drivers = []
+
 
 for days_left in range(5, 0, -1):
     change = random.uniform(-5, 5)
@@ -59,18 +62,21 @@ Output only the raw JSON. Do not wrap it in markdown code blocks or backticks.""
         )
         day_data = json.loads(day_response.content[0].text)
         print(f" main driver: {day_data['main_driver']} ({day_data['reason']})")
+        drivers.append(day_data["main_driver"])
 
     prev_price = price
     prev_S = S
 
 print(prices)
+driver_counts = Counter(drivers)
+print(f"Main driver summary: {driver_counts}")
 
 
-prompt = f"This is a call option with strike {K} and volatility {sigma}. Over 5 days, the underlying moved through {stock_prices}, the option price moved through {prices}, the computed delta was {deltas}, the computed daily theta was {thetas}, and the computed gamma was {gammas}. Analyze what drove the option's price: separate the effect of the underlying's movement from time decay and use gamma to account for how delta itself change as the underlying moved. Use the provided delta, theta, and gamma values rather than estimating them. "
-response = client.messages.create(
-    model="claude-haiku-4-5-20251001",
-    max_tokens=400,
-    messages=[{"role": "user", "content": prompt}],
-)
+# prompt = f"This is a call option with strike {K} and volatility {sigma}. Over 5 days, the underlying moved through {stock_prices}, the option price moved through {prices}, the computed delta was {deltas}, the computed daily theta was {thetas}, and the computed gamma was {gammas}. Analyze what drove the option's price: separate the effect of the underlying's movement from time decay and use gamma to account for how delta itself change as the underlying moved. Use the provided delta, theta, and gamma values rather than estimating them. "
+# response = client.messages.create(
+#     model="claude-haiku-4-5-20251001",
+#     max_tokens=400,
+#     messages=[{"role": "user", "content": prompt}],
+# )
 
-print(response.content[0].text)
+# print(response.content[0].text)

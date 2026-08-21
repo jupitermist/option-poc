@@ -2,3 +2,4 @@
 venv/
 sandbox/
 __pycache__/
+output.txt
