@@ -7,16 +7,18 @@ from anthropic import Anthropic
 
 load_dotenv()
 
+
 openai_key = os.getenv("OPENAI_API_KEY")
 anthropic_key = os.getenv("ANTHROPIC_API_KEY")
 
+if not openai_key:
+    raise ValueError("OPENAI_API_KEY not set")
+
+if not anthropic_key:
+    raise ValueError("ANTHROPIC_API_KEY not set")
+
 openai_client = OpenAI(api_key=openai_key)
 anthropic_client = Anthropic(api_key=anthropic_key)
-
-question = """I am a complete beginner in US stock options trading with a budget of about 200 US dollars. I want to avoid large losses and try one simple trade first. I have not chosen a stock yet, and I do not know where to start.
-Suggest a concrete starting point: what kind of US stock to choose (characteristics, not a specific ticker), and one beginner-friendly strategy that fits.
-Respond in JSON with this exact format: {"stock_type": "what kind of stock and why", "strategy": "strategy name", "reason": "why it fits a beginner, under 40 words"}
-Output only the raw JSON. Do not wrap it in markdown code blocks or backticks."""
 
 
 def ask_openai(client, question):
@@ -28,8 +30,6 @@ def ask_openai(client, question):
     return response.choices[0].message.content
 
 
-
-
 def ask_claude(client, question):
     response = client.messages.create(
         model="claude-haiku-4-5-20251001",
@@ -39,21 +39,15 @@ def ask_claude(client, question):
     return response.content[0].text
 
 
-
-
-def parse_advisor_response(answer):
-    return json.loads(answer)
-
-
-
-
 def compare_strategies(openai_strategy, claude_strategy):
     if openai_strategy == claude_strategy:
         print("MATCH:", openai_strategy)
+        return True
     else:
         print("MISMATCH:")
         print("OpenAI:", openai_strategy)
         print("Claude:", claude_strategy)
+        return False
 
 
 def judge_strategies(openai_strategy, claude_strategy, openai_data, claude_data):
@@ -71,21 +65,33 @@ Explain the key difference between these two strategies in simple terms for a be
     )
     print("\n--- Advisor summary ---")
     print(judge_response.content[0].text)
-    
-    
-    
-openai_answer = ask_openai(openai_client, question)
-print("OpenAI:", openai_answer)
-
-claude_answer = ask_claude(anthropic_client, question)
-print("Claude", claude_answer)
 
 
-openai_data = parse_advisor_response(openai_answer)
-claude_data = parse_advisor_response(claude_answer)
-openai_strategy = openai_data["strategy"]
-claude_strategy = claude_data["strategy"]
+def main():
+    question = """I am a complete beginner in US stock options trading with a budget of about 200 US dollars. I want to avoid large losses and try one simple trade first. I have not chosen a stock yet, and I do not know where to start.
+The strategy must be exactly one of these five: Long Call, Long Put, Covered Call, Cash-Secured Put, Bull Call Spread.
+Respond in JSON with this exact format: {"stock_type": "what kind of stock and why", "strategy": "one of the five strategies above", "reason": "why it fits a beginner, under 40 words"}
+Output only the raw JSON. Do not wrap it in markdown code blocks or backticks."""
+
+    openai_answer = ask_openai(openai_client, question)
+    print("OpenAI:", openai_answer)
+
+    claude_answer = ask_claude(anthropic_client, question)
+    print("Claude", claude_answer)
+
+    try:
+        openai_data = json.loads(openai_answer)
+        claude_data = json.loads(claude_answer)
+    except json.JSONDecodeError:
+        print("Could not parse one of the responses. Stopping.")
+        return
+    openai_strategy = openai_data["strategy"]
+    claude_strategy = claude_data["strategy"]
+
+    is_match = compare_strategies(openai_strategy, claude_strategy)
+    if not is_match:
+        judge_strategies(openai_strategy, claude_strategy, openai_data, claude_data)
 
 
-compare_strategies(openai_strategy, claude_strategy)
-judge_strategies(openai_strategy, claude_strategy, openai_data, claude_data)
+if __name__ == "__main__":
+    main()
