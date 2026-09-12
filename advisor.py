@@ -26,6 +26,7 @@ def ask_openai(client, question):
         model="gpt-4o-mini",
         max_tokens=500,
         messages=[{"role": "user", "content": question}],
+        response_format={"type": "json_object"},
     )
     return response.choices[0].message.content
 
