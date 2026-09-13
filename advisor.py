@@ -52,12 +52,13 @@ def compare_strategies(openai_strategy, claude_strategy):
 
 
 def judge_strategies(openai_strategy, claude_strategy, openai_data, claude_data):
-    judge_prompt = f"""Two AI advisors suggested different options strategies for a complete beginner with a 200 dollar budget who wants to avoid large losses.
+    judge_prompt = f"""Two anonymous advisors suggested different options strategies for a complete beginner with a 200 dollar budget who wants to avoid large losses.
 
-Advisor 1 (OpenAI) suggested: {openai_strategy}. Reason: {openai_data["reason"]}
-Advisor 2 (Claude) suggested: {claude_strategy}. Reason: {claude_data["reason"]}
+Advisor A suggested: {openai_strategy}. Reason: {openai_data["reason"]}
+Advisor B suggested: {claude_strategy}. Reason: {claude_data["reason"]}
 
-Explain the key difference between these two strategies in simple terms for a beginner, and give one clear recommendation on which to start with and why. Keep it under 80 words."""
+Judge them only on these three criteria: cost to enter, risk of large loss, and how easy it is for a beginner to understand. Do not consider which advisor said what.
+Explain the key difference in simple terms for a beginner, and give one clear recommendation on which to start with and why. Keep it under 80 words."""
 
     judge_response = anthropic_client.messages.create(
         model="claude-haiku-4-5-20251001",
