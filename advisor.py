@@ -24,7 +24,7 @@ anthropic_client = Anthropic(api_key=anthropic_key)
 def ask_openai(client, question):
     response = client.chat.completions.create(
         model="gpt-4o-mini",
-        max_tokens=500,
+        max_tokens=200,
         messages=[{"role": "user", "content": question}],
         response_format={"type": "json_object"},
     )
@@ -34,7 +34,7 @@ def ask_openai(client, question):
 def ask_claude(client, question):
     response = client.messages.create(
         model="claude-haiku-4-5-20251001",
-        max_tokens=500,
+        max_tokens=200,
         messages=[{"role": "user", "content": question}],
     )
     return response.content[0].text
