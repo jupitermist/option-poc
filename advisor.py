@@ -28,6 +28,11 @@ openai_client = OpenAI(api_key=openai_key)
 anthropic_client = Anthropic(api_key=anthropic_key)
 gemini_client = genai.Client(api_key=gemini_key)
 
+question = """I am a complete beginner in US stock options trading with a budget of about 200 US dollars. I want to avoid large losses and try one simple trade first. I have not chosen a stock yet, and I do not know where to start.
+The strategy must be exactly one of these five: Long Call, Long Put, Covered Call, Cash-Secured Put, Bull Call Spread.
+Respond in JSON with this exact format: {"stock_type": "what kind of stock and why", "strategy": "one of the five strategies above", "reason": "why it fits a beginner, under 40 words"}
+Output only the raw JSON. Do not wrap it in markdown code blocks or backticks."""
+
 
 def ask_openai(client, question):
     response = client.chat.completions.create(
@@ -58,6 +63,22 @@ def compare_strategies(openai_strategy, gemini_strategy):
         return False
 
 
+def get_strategy(answer):
+    data = json.loads(answer)
+    return data["strategy"], data
+
+
+def run_agreement_test(question, n):
+    match_count = 0
+    for i in range(n):
+        openai_strategy, _ = get_strategy(ask_openai(openai_client, question))
+        gemini_strategy, _ = get_strategy(ask_gemini(gemini_client, question))
+        print(f"Run {i+1}:")
+        if compare_strategies(openai_strategy, gemini_strategy):
+            match_count += 1
+    print(f"\nAgreement: {match_count} / {n}")
+
+
 def judge_strategies(openai_strategy, gemini_strategy, openai_data, gemini_data):
     judge_prompt = f"""Two anonymous advisors suggested different options strategies for a complete beginner with a 200 dollar budget who wants to avoid large losses.
 
@@ -77,10 +98,6 @@ Explain the key difference in simple terms for a beginner, and give one clear re
 
 
 def main():
-    question = """I am a complete beginner in US stock options trading with a budget of about 200 US dollars. I want to avoid large losses and try one simple trade first. I have not chosen a stock yet, and I do not know where to start.
-The strategy must be exactly one of these five: Long Call, Long Put, Covered Call, Cash-Secured Put, Bull Call Spread.
-Respond in JSON with this exact format: {"stock_type": "what kind of stock and why", "strategy": "one of the five strategies above", "reason": "why it fits a beginner, under 40 words"}
-Output only the raw JSON. Do not wrap it in markdown code blocks or backticks."""
 
     openai_answer = ask_openai(openai_client, question)
     print("OpenAI:", openai_answer)
@@ -89,13 +106,11 @@ Output only the raw JSON. Do not wrap it in markdown code blocks or backticks.""
     print("Gemini:", gemini_answer)
 
     try:
-        openai_data = json.loads(openai_answer)
-        gemini_data = json.loads(gemini_answer)
+        openai_strategy, openai_data = get_strategy(openai_answer)
+        gemini_strategy, gemini_data = get_strategy(gemini_answer)
     except json.JSONDecodeError:
         print("Could not parse one of the responses. Stopping.")
         return
-    openai_strategy = openai_data["strategy"]
-    gemini_strategy = gemini_data["strategy"]
 
     is_match = compare_strategies(openai_strategy, gemini_strategy)
     if not is_match:
@@ -103,4 +118,4 @@ Output only the raw JSON. Do not wrap it in markdown code blocks or backticks.""
 
 
 if __name__ == "__main__":
-    main()
+    run_agreement_test(question, 3)
