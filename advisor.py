@@ -1,6 +1,7 @@
 import os
 import json
 import logging
+import yfinance as yf
 
 from dotenv import load_dotenv
 from openai import OpenAI
@@ -50,6 +51,15 @@ def ask_gemini(client, question):
         contents=question,
     )
     return response.text
+
+
+def get_market_summary(ticker):
+    stock = yf.Ticker(ticker)
+    history = stock.history(period="5d")
+    latest = history["Close"].iloc[-1]
+    first = history["Close"].iloc[0]
+    change = (latest - first) / first * 100
+    return f"{ticker}: latest close ${latest:.2f}, {change:+.1f}% over 5 days"
 
 
 def compare_strategies(openai_strategy, gemini_strategy):
@@ -118,4 +128,4 @@ def main():
 
 
 if __name__ == "__main__":
-    run_agreement_test(question, 3)
+    main()
