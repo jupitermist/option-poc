@@ -2,6 +2,7 @@ import os
 import json
 import logging
 import yfinance as yf
+import time
 
 from dotenv import load_dotenv
 from openai import OpenAI
@@ -29,9 +30,26 @@ openai_client = OpenAI(api_key=openai_key)
 anthropic_client = Anthropic(api_key=anthropic_key)
 gemini_client = genai.Client(api_key=gemini_key)
 
-question = """I am a complete beginner in US stock options trading with a budget of about 200 US dollars. I want to avoid large losses and try one simple trade first. I have not chosen a stock yet, and I do not know where to start.
+
+def get_market_summary(ticker):
+    stock = yf.Ticker(ticker)
+    history = stock.history(period="5d")
+    latest = history["Close"].iloc[-1]
+    first = history["Close"].iloc[0]
+    change = (latest - first) / first * 100
+    return f"{ticker}: latest close ${latest:.2f}, {change:+.1f}% over 5 days"
+
+
+def build_question(ticker):
+    summary = get_market_summary(ticker)
+    return f"""I am a complete beginner in US stock options trading with a budget of about 200 US dollars. I want to avoid large losses and try one simple trade first.
+
+Here is the current market data for {ticker}:
+{summary}
+
+Based on this data, suggest one options strategy for this stock.
 The strategy must be exactly one of these five: Long Call, Long Put, Covered Call, Cash-Secured Put, Bull Call Spread.
-Respond in JSON with this exact format: {"stock_type": "what kind of stock and why", "strategy": "one of the five strategies above", "reason": "why it fits a beginner, under 40 words"}
+Respond in JSON with this exact format: {{"strategy": "one of the five strategies above", "reason": "why it fits this stock and a beginner, under 40 words"}}
 Output only the raw JSON. Do not wrap it in markdown code blocks or backticks."""
 
 
@@ -46,20 +64,23 @@ def ask_openai(client, question):
 
 
 def ask_gemini(client, question):
-    response = client.models.generate_content(
-        model="gemini-3.6-flash",
-        contents=question,
-    )
-    return response.text
+    for attempt in range(3):
+        try:
+            response = client.models.generate_content(
+                model="gemini-3.6-flash",
+                contents=question,
+            )
+            return response.text
+        except Exception:
+            if attempt < 2:
+                time.sleep(5)
+            else:
+                raise
 
 
-def get_market_summary(ticker):
-    stock = yf.Ticker(ticker)
-    history = stock.history(period="5d")
-    latest = history["Close"].iloc[-1]
-    first = history["Close"].iloc[0]
-    change = (latest - first) / first * 100
-    return f"{ticker}: latest close ${latest:.2f}, {change:+.1f}% over 5 days"
+def get_strategy(answer):
+    data = json.loads(answer)
+    return data["strategy"], data
 
 
 def compare_strategies(openai_strategy, gemini_strategy):
@@ -71,22 +92,6 @@ def compare_strategies(openai_strategy, gemini_strategy):
         print("OpenAI:", openai_strategy)
         print("Gemini:", gemini_strategy)
         return False
-
-
-def get_strategy(answer):
-    data = json.loads(answer)
-    return data["strategy"], data
-
-
-def run_agreement_test(question, n):
-    match_count = 0
-    for i in range(n):
-        openai_strategy, _ = get_strategy(ask_openai(openai_client, question))
-        gemini_strategy, _ = get_strategy(ask_gemini(gemini_client, question))
-        print(f"Run {i+1}:")
-        if compare_strategies(openai_strategy, gemini_strategy):
-            match_count += 1
-    print(f"\nAgreement: {match_count} / {n}")
 
 
 def judge_strategies(openai_strategy, gemini_strategy, openai_data, gemini_data):
@@ -107,7 +112,21 @@ Explain the key difference in simple terms for a beginner, and give one clear re
     print(judge_response.content[0].text)
 
 
+def run_agreement_test(ticker, n):
+    match_count = 0
+    for i in range(n):
+        question = build_question(ticker)
+        openai_strategy, _ = get_strategy(ask_openai(openai_client, question))
+        gemini_strategy, _ = get_strategy(ask_gemini(gemini_client, question))
+        print(f"Run {i+1}:")
+        if compare_strategies(openai_strategy, gemini_strategy):
+            match_count += 1
+    print(f"\nAgreement: {match_count} / {n}")
+
+
 def main():
+    ticker = "AAPL"
+    question = build_question(ticker)
 
     openai_answer = ask_openai(openai_client, question)
     print("OpenAI:", openai_answer)
