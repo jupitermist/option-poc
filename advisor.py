@@ -1,4 +1,5 @@
 import os
+import sys
 import json
 import logging
 import yfinance as yf
@@ -125,7 +126,7 @@ def run_agreement_test(ticker, n):
 
 
 def main():
-    ticker = "AAPL"
+    ticker = sys.argv[1] if len(sys.argv) > 1 else "AAPL"
     question = build_question(ticker)
 
     openai_answer = ask_openai(openai_client, question)
