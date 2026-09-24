@@ -113,18 +113,6 @@ Explain the key difference in simple terms for a beginner, and give one clear re
     print(judge_response.content[0].text)
 
 
-def run_agreement_test(ticker, n):
-    match_count = 0
-    for i in range(n):
-        question = build_question(ticker)
-        openai_strategy, _ = get_strategy(ask_openai(openai_client, question))
-        gemini_strategy, _ = get_strategy(ask_gemini(gemini_client, question))
-        print(f"Run {i+1}:")
-        if compare_strategies(openai_strategy, gemini_strategy):
-            match_count += 1
-    print(f"\nAgreement: {match_count} / {n}")
-
-
 def main():
     ticker = sys.argv[1] if len(sys.argv) > 1 else "AAPL"
     question = build_question(ticker)
