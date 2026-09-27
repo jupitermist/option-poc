@@ -48,9 +48,11 @@ def build_question(ticker):
 Here is the current market data for {ticker}:
 {summary}
 
-Based on this data, suggest one options strategy for this stock.
-The strategy must be exactly one of these five: Long Call, Long Put, Covered Call, Cash-Secured Put, Bull Call Spread.
-Respond in JSON with this exact format: {{"strategy": "one of the five strategies above", "reason": "why it fits this stock and a beginner, under 40 words"}}
+Choose the strategy based on the recent price trend:
+- If the price is clearly rising, prefer a bullish strategy (Long Call or Bull Call Spread).
+- If the price is clearly falling, prefer a bearish or income strategy (Long Put or Cash-Secured Put).
+- If the price is flat, prefer an income strategy (Covered Call or Cash-Secured Put).
+The strategy must be exactly one of these five: Long Call, Long Put, Covered Call, Cash-Secured Put, Bull Call Spread.Respond in JSON with this exact format: {{"strategy": "one of the five strategies above", "reason": "why it fits this stock and a beginner, under 40 words"}}
 Output only the raw JSON. Do not wrap it in markdown code blocks or backticks."""
 
 
@@ -58,6 +60,7 @@ def ask_openai(client, question):
     response = client.chat.completions.create(
         model="gpt-4o-mini",
         max_tokens=200,
+        temperature=0.7,
         messages=[{"role": "user", "content": question}],
         response_format={"type": "json_object"},
     )
@@ -70,6 +73,7 @@ def ask_gemini(client, question):
             response = client.models.generate_content(
                 model="gemini-3.6-flash",
                 contents=question,
+                config={"temperature": 0.7},
             )
             return response.text
         except Exception:
