@@ -45,8 +45,8 @@ and a slower run.
 
 ### ADR-006: A separate evaluation script, not a feature
 **Status:** Accepted
-**Context:** I wanted to measure how reliable the advisors are, without mixing that
-into the advice flow.
+**Context:** The reliability of the advisors needed to be measurable, without mixing
+that into the advice flow.
 **Decision:** `evaluate.py` runs the advisors N times and reports their agreement
 rate, reusing the advisor's own functions.
 **Consequences:** Keeps advice and measurement separate. It surfaced a finding: the
