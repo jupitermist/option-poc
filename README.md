@@ -44,10 +44,10 @@ GEMINI_API_KEY=...
 
 
 ## Usage
-
-python advisor.py AAPL # one recommendation for a stock
-python evaluate.py AAPL # measure how often the two advisors agree
-
+```bash
+python advisor.py AAPL      # one recommendation for a stock
+python evaluate.py AAPL     # measure how often the two advisors agree
+```
 
 ## Disclaimer
 
