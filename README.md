@@ -11,6 +11,11 @@ Gemini to each suggest one strategy, and compares them. When they disagree, Anth
 Claude — which is not one of the two advisors — judges the suggestions on fixed
 criteria. The tool only advises; trades are placed manually by the user.
 
+## Architecture
+
+An LLM workflow built on one premise: a single model's answer should not be trusted alone.
+Each design decision is recorded in [DESIGN.md](DESIGN.md).
+
 ## Why this exists
 
 Asking a chatbot "what should I trade?" returns generic advice, because it doesn't
