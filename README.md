@@ -13,8 +13,12 @@ criteria. The tool only advises; trades are placed manually by the user.
 
 ## Architecture
 
-An LLM workflow built on one premise: a single model's answer should not be trusted alone.
-Each design decision is recorded in [DESIGN.md](DESIGN.md).
+This PoC is an LLM workflow. Steps and branching are fixed in code. The focus is the design:
+
+- **No single model is trusted alone.** Two models propose independently; a third judges only when they disagree. ([ADR-001](DESIGN.md))
+- **The judge has no stake.** It never proposes, and the suggestions are anonymized. ([ADR-002](DESIGN.md))
+- **Verdicts are explainable.** The judge scores on three fixed criteria only. ([ADR-003](DESIGN.md))
+- **Disagreement is measured, not assumed.** A separate script reports how often the two advisors agree. ([ADR-006](DESIGN.md))
 
 ## Why this exists
 
